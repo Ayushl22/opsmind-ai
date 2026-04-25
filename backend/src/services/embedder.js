@@ -1,16 +1,10 @@
-import axios from "axios";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const getEmbedding = async (text) => {
-  const res = await axios.post(
-    `https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      content: {
-        parts: [{ text }]
-      }
-    }
-  );
-
-  return res.data.embedding.values;
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+  const result = await model.embedContent(text);
+  return result.embedding.values;
 };
 
 export default getEmbedding;

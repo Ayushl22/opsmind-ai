@@ -1,10 +1,13 @@
 import fs from "fs";
-import pdf from "pdf-parse";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 const parsePDF = async (filePath) => {
   const dataBuffer = fs.readFileSync(filePath);
-  const data = await pdf(dataBuffer);
-  return data.text;
+  const result = await pdfParse(dataBuffer);
+  return result.text;
 };
 
 export default parsePDF;
