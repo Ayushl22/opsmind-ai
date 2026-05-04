@@ -1,5 +1,6 @@
 import Document from "../models/Document.js";
 import getEmbedding from "./embedder.js";
+import retrieverPipeline from "./retrieverPipeline.js";
 
 const retrieveChunks = async (question, topK = 5) => {
   const queryEmbedding = await getEmbedding(question);
@@ -33,6 +34,19 @@ const retrieveChunks = async (question, topK = 5) => {
     source: chunk.source,
     score: chunk.score,
   }));
+};
+
+export default retrieveChunks;
+
+/**
+ * Public entry point for retrieval.
+ * Delegates to retrieverPipeline — keeping the import in query.js unchanged.
+ *
+ * @param {string} question
+ * @returns {Promise<Array<{ text, source, score }>>}
+ */
+const retrieveChunks = async (question) => {
+  return await retrieverPipeline(question);
 };
 
 export default retrieveChunks;
