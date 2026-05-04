@@ -15,7 +15,7 @@ app.use("/api", uploadRoutes);
 app.use("/api", queryRoutes);
 
 app.get("/", (req, res) => {
-  res.send("OpsMind AI Backend Running 🚀");
+  res.send("OpsMind AI Backend Running ");
 });
 
 const PORT = process.env.PORT || 5000;
