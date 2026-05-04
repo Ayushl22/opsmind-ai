@@ -34,8 +34,7 @@ QUESTION: ${question}
 ANSWER:`;
 
   // ── 3. Call Gemini ─────────────────────────────────────────────────────────
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-  const result = await model.generateContent(prompt);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });  const result = await model.generateContent(prompt);
   const rawAnswer = result.response.text().trim();
 
   // ── 4. Detect out-of-context responses ────────────────────────────────────
