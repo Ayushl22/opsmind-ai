@@ -1,44 +1,70 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import withTimeout from "../utils/withTimeout.js";
+
+// ── Singleton: reuse the same client & model across all requests ──
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-001",
+  generationConfig: {
+    temperature: 0.2,       // Low temperature → focused, deterministic answers
+    maxOutputTokens: 512,   // Cap output length → faster responses
+  },
+});
 
 const generateAnswer = async (question, chunks) => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  
-  const contextBlock = chunks
-    .map((c, i) => `[${i + 1}] (Source: ${c.source})\n${c.text}`)
-    .join("\n\n");
+  console.log(`[chatAgent] Starting LLM generation for question: "${question}"`);
+  console.log(`[chatAgent] Number of context chunks: ${chunks.length}`);
 
-  const prompt = `You are OpsMind AI, a helpful assistant that answers questions strictly based on the company documents provided below.
+  try {
+    const contextBlock = chunks
+      .map((c, i) => `[${i + 1}] (Source: ${c.source})\n${c.text}`)
+      .join("\n\n");
 
-CONTEXT (retrieved from company documents):
+    const prompt = `You are OpsMind AI — a concise, professional assistant that answers questions using ONLY the company documents below.
+
+CONTEXT:
 ${contextBlock}
 
-INSTRUCTIONS:
-- Answer ONLY using the information in the context above.
-- If the answer is not present in the context, respond with exactly:
-  "I'm sorry, I don't have enough information in the available documents to answer that question."
-- Be clear, concise, and professional.
-- At the end of your answer, list the document sources you used as "Sources: <name1>, <name2>, ...".
-  If you could not answer, omit the sources line.
+RULES:
+1. Answer ONLY from the context above. Do NOT add outside knowledge.
+2. If the answer is not in the context, reply EXACTLY: "I'm sorry, I don't have enough information in the available documents to answer that question."
+3. Keep your answer to 2-4 sentences unless a list or table is clearly needed.
+4. Use bullet points for multi-part answers.
+5. End with "Sources: <filename1>, <filename2>" on a new line (only if you answered).
 
 QUESTION: ${question}
 
 ANSWER:`;
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
-  const result = await model.generateContent(prompt);
-  const rawAnswer = result.response.text().trim();
+    console.log("[chatAgent] Calling Gemini API...");
 
-  const OUT_OF_CONTEXT_SIGNAL =
-    "i don't have enough information in the available documents";
-  const isOutOfContext = rawAnswer.toLowerCase().includes(OUT_OF_CONTEXT_SIGNAL);
+    // Wrap generateContent with 30-second timeout
+    const result = await withTimeout(
+      model.generateContent(prompt),
+      30000,
+      "Gemini generateContent"
+    );
 
-  const uniqueSources = [...new Set(chunks.map((c) => c.source))];
+    console.log("[chatAgent] Gemini response received successfully");
+    const rawAnswer = result.response.text().trim();
 
-  return {
-    answer: rawAnswer,
-    sources: isOutOfContext ? [] : uniqueSources,
-    isOutOfContext,
-  };
+    const OUT_OF_CONTEXT_SIGNAL =
+      "i don't have enough information in the available documents";
+    const isOutOfContext = rawAnswer.toLowerCase().includes(OUT_OF_CONTEXT_SIGNAL);
+
+    const uniqueSources = [...new Set(chunks.map((c) => c.source))];
+
+    console.log(`[chatAgent] LLM generation complete. isOutOfContext: ${isOutOfContext}`);
+
+    return {
+      answer: rawAnswer,
+      sources: isOutOfContext ? [] : uniqueSources,
+      isOutOfContext,
+    };
+  } catch (error) {
+    console.error("[chatAgent] Error during LLM generation:", error.message);
+    throw error; // Re-throw for the route handler to catch
+  }
 };
 
 export default generateAnswer;
