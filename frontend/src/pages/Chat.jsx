@@ -1,14 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Copy, RotateCw, CheckCircle, FileText } from 'lucide-react';
 import Layout from '../components/Layout';
 import ChatComposer from '../components/ChatComposer';
 import DocumentScopeSelector from '../components/DocumentScopeSelector';
-import { askQuestion, fetchDocuments, uploadDocuments } from '../services/api';
+import {
+  askQuestion,
+  fetchDocuments,
+  uploadDocuments,
+  createConversation,
+  fetchConversation,
+  addMessageToConversation,
+} from '../services/api';
+import { useUser } from '../context/UserContext';
 import './Chat.css';
 
 const Chat = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { chatId } = useParams();
   const initialDocumentIds = location.state?.selectedDocumentIds || [];
   const initialDocuments = location.state?.selectedDocuments || [];
@@ -19,9 +28,13 @@ const Chat = () => {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [documents, setDocuments] = useState(initialDocuments);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState(initialDocumentIds.map(String));
+  const [conversationId, setConversationId] = useState(
+    chatId && chatId !== 'new' ? chatId : null
+  );
 
   const messagesEndRef = useRef(null);
   const initialQuestionSentRef = useRef(false);
+  const conversationCreatedRef = useRef(false);
 
   const readyDocuments = documents.filter(doc => doc.status === 'ready');
   const lastAiMessage = messages.filter(message => message.type === 'ai').slice(-1)[0];
@@ -34,15 +47,46 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Load documents
   useEffect(() => {
     const loadDocuments = async () => {
       const docs = await fetchDocuments();
       setDocuments(docs);
     };
-
     loadDocuments();
   }, []);
 
+  // Load existing conversation if navigating to /chat/:chatId
+  useEffect(() => {
+    if (chatId && chatId !== 'new' && !conversationCreatedRef.current) {
+      const loadConversation = async () => {
+        try {
+          const conv = await fetchConversation(chatId);
+          setConversationId(chatId);
+
+          const loadedMessages = (conv.messages || []).map((msg) => ({
+            type: msg.type,
+            content: msg.content,
+            sources: msg.sources || [],
+            scope: msg.scope || '',
+            timestamp: new Date(msg.timestamp),
+            error: msg.error || false,
+          }));
+          setMessages(loadedMessages);
+
+          if (conv.documentIds?.length > 0) {
+            setSelectedDocumentIds(conv.documentIds.map(String));
+          }
+        } catch {
+          // Conversation not found — treat as new
+          console.warn('Conversation not found, starting fresh');
+        }
+      };
+      loadConversation();
+    }
+  }, [chatId]);
+
+  // Handle initial question from Home page navigation
   useEffect(() => {
     if (location.state?.initialQuestion && !initialQuestionSentRef.current) {
       initialQuestionSentRef.current = true;
@@ -71,8 +115,37 @@ const Chat = () => {
     return `${selectedDocumentIds.length} selected document${selectedDocumentIds.length > 1 ? 's' : ''}`;
   };
 
+  /**
+   * Ensure a conversation exists in the DB. Creates one if needed.
+   * Returns the conversation ID.
+   */
+  const ensureConversation = async () => {
+    if (conversationId) return conversationId;
+
+    try {
+      conversationCreatedRef.current = true;
+      const conv = await createConversation({ documentIds: selectedDocumentIds });
+      const newId = conv._id;
+      setConversationId(newId);
+
+      // Update URL without triggering a re-render / re-fetch
+      navigate(`/chat/${newId}`, { replace: true });
+      return newId;
+    } catch {
+      console.error('Failed to create conversation');
+      return null;
+    }
+  };
+
+  const { isLoggedIn, openLoginPopup } = useUser();
+
   const handleSend = async (question = input) => {
     if (!question.trim() || loading) return;
+
+    if (!isLoggedIn) {
+      openLoginPopup();
+      return;
+    }
 
     const userMessage = {
       type: 'user',
@@ -84,6 +157,16 @@ const Chat = () => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
+
+    // Persist: ensure conversation + save user message
+    const convId = await ensureConversation();
+    if (convId) {
+      addMessageToConversation(convId, {
+        type: 'user',
+        content: question,
+        scope: getScopeText(),
+      });
+    }
 
     try {
       const result = await askQuestion({
@@ -100,6 +183,17 @@ const Chat = () => {
       };
 
       setMessages(prev => [...prev, aiMessage]);
+
+      // Persist AI message
+      if (convId) {
+        addMessageToConversation(convId, {
+          type: 'ai',
+          content: result.answer,
+          sources: result.sources,
+          scope: getScopeText(),
+          isOutOfContext: result.isOutOfContext,
+        });
+      }
     } catch (error) {
       const errorMessage = {
         type: 'ai',
@@ -111,6 +205,14 @@ const Chat = () => {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+
+      if (convId) {
+        addMessageToConversation(convId, {
+          type: 'ai',
+          content: errorMessage.content,
+          error: true,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +233,6 @@ const Chat = () => {
     const uploadedDocs = await uploadDocuments(files);
     setDocuments(prev => [...uploadedDocs, ...prev]);
   };
-
 
   const handleCopy = (content, index) => {
     navigator.clipboard.writeText(content);

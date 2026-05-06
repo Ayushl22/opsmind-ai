@@ -7,12 +7,10 @@ import {
   PanelLeftOpen,
   Library, 
   History, 
-  FileText, 
   Settings, 
   LogOut, 
-  User,
-  ChevronLeft,
-  ChevronRight
+  LogIn,
+  User
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import './Sidebar.css';
@@ -26,7 +24,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useUser();
+  const { user, isLoggedIn, logout, openLoginPopup } = useUser();
 
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -41,9 +39,13 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     return location.pathname.startsWith(path);
   };
 
-  const handleLogout = () => {
-    // Handle logout logic
-    console.log('Logging out...');
+  const handleAuthAction = () => {
+    if (isLoggedIn) {
+      logout();
+      navigate('/');
+    } else {
+      openLoginPopup();
+    }
   };
 
   return (
@@ -83,32 +85,34 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       <div className="sidebar-footer">
         <button 
           className="nav-item logout-button"
-          onClick={handleLogout}
-          title={collapsed ? 'Logout' : ''}
+          onClick={handleAuthAction}
+          title={collapsed ? (isLoggedIn ? 'Logout' : 'Login') : ''}
         >
-          <LogOut size={20} />
-          {!collapsed && <span>Logout</span>}
+          {isLoggedIn ? <LogOut size={20} /> : <LogIn size={20} />}
+          {!collapsed && <span>{isLoggedIn ? 'Logout' : 'Login'}</span>}
         </button>
         
-        <button
-          className={`nav-item profile-button ${isActive('/profile') ? 'active' : ''}`}
-          onClick={() => navigate('/profile')}
-          title={collapsed ? 'Profile' : ''}
-        >
-          <div className="profile-avatar">
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.name} />
-            ) : (
-              <User size={20} />
-            )}
-          </div>
-          {!collapsed && (
-            <div className="profile-info">
-              <div className="profile-name">{user.name}</div>
-              <div className="profile-role text-xs text-muted">{user.role}</div>
+        {isLoggedIn && (
+          <button
+            className={`nav-item profile-button ${isActive('/profile') ? 'active' : ''}`}
+            onClick={() => navigate('/profile')}
+            title={collapsed ? 'Profile' : ''}
+          >
+            <div className="profile-avatar">
+              {user.picture ? (
+                <img src={user.picture} alt={user.name} />
+              ) : (
+                <User size={20} />
+              )}
             </div>
-          )}
-        </button>
+            {!collapsed && (
+              <div className="profile-info">
+                <div className="profile-name">{user.name}</div>
+                <div className="profile-role text-xs text-muted">{user.email}</div>
+              </div>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
