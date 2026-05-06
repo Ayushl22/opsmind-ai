@@ -1,0 +1,126 @@
+.document-scope-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-scope-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.document-scope-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.document-scope-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.scope-link-button {
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scope-link-button:hover {
+  color: var(--accent-hover);
+}
+
+.document-scope-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.document-scope-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.document-scope-item:hover {
+  background-color: var(--border-primary);
+}
+
+.document-scope-item.selected {
+  border-color: var(--accent-primary);
+  background-color: var(--bg-primary);
+}
+
+.document-scope-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.document-scope-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-scope-name {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-scope-date {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.document-scope-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary);
+  color: white;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.document-scope-item.selected .document-scope-check {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.document-scope-empty {
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
