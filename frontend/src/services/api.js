@@ -5,3 +5,16 @@ export const fetchDocuments = async () => {
   const data = await response.json();
   return data;
 };
+
+export const uploadDocuments = async (files = []) => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('documents', file);
+  });
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await response.json();
+  return data;
+};
