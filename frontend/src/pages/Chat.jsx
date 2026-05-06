@@ -186,8 +186,8 @@ const Chat = () => {
   );
 
   return (
-    <Layout 
-      title="Chat" 
+    <Layout
+      title="Chat"
       rightPanelTitle="Document Vault"
       rightPanelContent={rightPanelContent}
     >
@@ -214,7 +214,7 @@ const Chat = () => {
                 <div className="message-content ai-message">
                   <div className="ai-label">Answer from {message.scope || 'company documents'}</div>
                   <div className="message-text">{message.content}</div>
-                  
+
                   {message.sources && message.sources.length > 0 && (
                     <div className="inline-sources">
                       <div className="inline-sources-title text-sm font-medium">Sources:</div>
@@ -229,7 +229,7 @@ const Chat = () => {
                   )}
 
                   <div className="message-actions">
-                    <button 
+                    <button
                       className="action-button"
                       onClick={() => handleCopy(message.content, index)}
                       title="Copy answer"
@@ -246,7 +246,7 @@ const Chat = () => {
                         </>
                       )}
                     </button>
-                    <button 
+                    <button
                       className="action-button"
                       onClick={() => handleRegenerate(index)}
                       title="Regenerate answer"
