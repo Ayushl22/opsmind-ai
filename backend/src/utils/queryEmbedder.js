@@ -9,6 +9,7 @@ const embedQuery = async (question) => {
   if (!question || question.trim().length === 0) {
     throw new Error("Question must be a non-empty string");
   }
+  console.log("[queryEmbedder] Embedding question...");
   return await getEmbedding(question);
 };
 
