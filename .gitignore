@@ -50,3 +50,8 @@ backend/.cache/
 # OS files
 .DS_Store
 Thumbs.db
+
+#venv
+.venv/
+graphify-out/
+
