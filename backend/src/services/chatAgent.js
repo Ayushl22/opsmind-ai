@@ -1,19 +1,30 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import withTimeout from "../utils/withTimeout.js";
 
-// ── Singleton: reuse the same client & model across all requests ──
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-001",
-  generationConfig: {
-    temperature: 0.2,       // Low temperature → focused, deterministic answers
-    maxOutputTokens: 512,   // Cap output length → faster responses
-  },
-});
+// ── Singleton: initialize as null, create on first use ──
+let genAI = null;
+let model = null;
 
 const generateAnswer = async (question, chunks) => {
   console.log(`[chatAgent] Starting LLM generation for question: "${question}"`);
   console.log(`[chatAgent] Number of context chunks: ${chunks.length}`);
+
+  // API ERROR FIX: loaded after dotenv
+  if (!genAI) {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("[chatAgent] FATAL: GEMINI_API_KEY is missing from process.env!");
+      throw new Error("Missing API Key");
+    }
+    console.log("[chatAgent] Initializing Google AI Client...");
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({
+      model: "gemini-flash-latest",
+      generationConfig: {
+        temperature: 0.2,       
+        maxOutputTokens: 2048,   // +INCREASED
+      },
+    });
+  }
 
   try {
     const contextBlock = chunks
@@ -48,6 +59,11 @@ ANSWER:`;
     console.log("[chatAgent] Gemini response received successfully");
     const rawAnswer = result.response.text().trim();
 
+    // DEBUG LOGS for DEV
+    console.log("\n========== RAW LLM ANSWER ==========");
+    console.log(rawAnswer);
+    console.log("====================================\n");
+
     const OUT_OF_CONTEXT_SIGNAL =
       "i don't have enough information in the available documents";
     const isOutOfContext = rawAnswer.toLowerCase().includes(OUT_OF_CONTEXT_SIGNAL);
@@ -63,7 +79,7 @@ ANSWER:`;
     };
   } catch (error) {
     console.error("[chatAgent] Error during LLM generation:", error.message);
-    throw error; // Re-throw for the route handler to catch
+    throw error; 
   }
 };
 

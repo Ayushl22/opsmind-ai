@@ -1,12 +1,24 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import withTimeout from "../utils/withTimeout.js";
 
-// ── Singleton: reuse the same client & model across all requests ──
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+// ── Singleton: initialize as null, create on first use ──
+let genAI = null;
+let embeddingModel = null;
 
 const getEmbedding = async (text) => {
   console.log("[embedder] Generating embedding for text...");
+
+  // Lazy Initialization: Only run this the very first time we need an embedding
+  if (!genAI) {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("[embedder] FATAL: GEMINI_API_KEY is missing from process.env!");
+      throw new Error("Missing API Key");
+    }
+    console.log("[embedder] Initializing Google AI Client...");
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Note: Consider upgrading to text-embedding-004 when ready!
+    embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+  }
 
   try {
     // Wrap embedContent with 15-second timeout
