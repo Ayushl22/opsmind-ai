@@ -29,6 +29,7 @@ const getEmbedding = async (text) => {
     );
 
     console.log("[embedder] Embedding generated successfully");
+    console.log(process.env.GEMINI_API_KEY);
     return result.embedding.values;
   } catch (error) {
     console.error("[embedder] Error generating embedding:", error.message);

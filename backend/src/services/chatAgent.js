@@ -1,9 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import withTimeout from "../utils/withTimeout.js";
 
-// ── Singleton: initialize as null, create on first use ──
-let genAI = null;
-let model = null;
+// ── Singleton: reuse the same client & model across all requests ──
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-001",
+  generationConfig: {
+    temperature: 0.2,       // Low temperature → focused, deterministic answers
+    maxOutputTokens: 512,   // Cap output length → faster responses
+  },
+});
 
 const generateAnswer = async (question, chunks) => {
   console.log(`[chatAgent] Starting LLM generation for question: "${question}"`);
