@@ -1,4 +1,4 @@
-# Week 4 — UI & Optimization
+# Week 4 — UI, Optimization & Docker
 
 ## Objective
 Build React chat interface. Show AI answers + sources. Add history. Polish UX.
