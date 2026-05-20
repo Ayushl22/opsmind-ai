@@ -1,7 +1,5 @@
 # Week 3 — Retriever Refactor: Git Commit Guide
 
-## File Structure After Refactor
-
 ```
 src/
 ├── constants/
