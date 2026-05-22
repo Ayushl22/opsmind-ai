@@ -10,7 +10,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // IMPORTANT:
 // gemini-2.0-flash-001 is causing quota issues on free tier
 const model = genAI.getGenerativeModel({
- model: "gemini-2.0-flash",
+   model: "gemini-2.5-flash",
   generationConfig: {
     temperature: 0.2,
     maxOutputTokens: 512,
